@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     #LocalApps
     'accounts',
     'store',
-    'cart'
+    'cart',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -132,4 +133,4 @@ MESSAGE_TAGS = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'accounts.Account'
+AUTH_USER_MODEL = 'accounts.User'

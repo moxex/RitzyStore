@@ -1,5 +1,5 @@
 from django import forms
-from .models import Account
+from .models import User
 
 
 class RegistrationForm(forms.ModelForm):
@@ -12,7 +12,7 @@ class RegistrationForm(forms.ModelForm):
     }))
 
     class Meta:
-        model = Account
+        model = User
         fields = ['first_name', 'last_name', 'phone_number', 'email', 'password']
 
     def clean(self):
@@ -37,7 +37,7 @@ class RegistrationForm(forms.ModelForm):
 
 class UserForm(forms.ModelForm):
     class Meta:
-        model = Account
+        model = User
         fields = ('first_name', 'last_name', 'phone_number')
 
     def __init__(self, *args, **kwargs):

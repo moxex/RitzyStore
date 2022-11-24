@@ -8,6 +8,8 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from .forms import ReviewForm
 from django.contrib import messages
 
+from orders.models import OrderProduct
+
 
 def store(request, category_slug=None):
     categories = None
@@ -41,13 +43,13 @@ def product_detail(request, category_slug, id, product_slug):
     except Exception as e:
         raise e
 
-    # if request.user.is_authenticated:
-    #     try:
-    #         orderproduct = OrderProduct.objects.filter(user=request.user, product_id=single_product.id).exists()
-    #     except OrderProduct.DoesNotExist:
-    #         orderproduct = None
-    # else:
-    #     orderproduct = None
+    if request.user.is_authenticated:
+        try:
+            orderproduct = OrderProduct.objects.filter(user=request.user, product_id=single_product.id).exists()
+        except OrderProduct.DoesNotExist:
+            orderproduct = None
+    else:
+        orderproduct = None
 
     # Get the reviews
     reviews = ReviewRating.objects.filter(product_id=single_product.id, status=True)
@@ -58,7 +60,7 @@ def product_detail(request, category_slug, id, product_slug):
     context = {
         'single_product': single_product,
         'in_cart'       : in_cart,
-        # 'orderproduct': orderproduct,
+        'orderproduct': orderproduct,
         'reviews': reviews,
         'product_gallery': product_gallery,
     }
