@@ -4,8 +4,8 @@
 {% block content %}
 
 
-<section class="section-content padding-y bg">
-	<div class="container">
+<section class="section-content padding-y bg" onload="payWithPaystack()">
+	<div class="container" >
 
 		<!-- ============================ COMPONENT 1 ================================= -->
 		<h4 class="text-center mb-20">Review Your Order and Make Payment</h4>
@@ -87,10 +87,10 @@
 				</div>
 
 			</aside> <!-- col.// -->
-			<aside class="col-lg-4">
+			<aside class="col-lg-4" >
 
 				<div class="card">
-					<div class="card-body">
+					<div class="card-body" >
 						<dl class="dlist-align">
 							<dt>Total price:</dt>
 							<dd class="text-right">&#8358 {{total}}</dd>
@@ -109,10 +109,6 @@
 						</p>
 
 
-						<div id="paypal-button-container">
-							<!-- PayPal Button Will Load -->
-						</div>
-
 					</div> <!-- card-body.// -->
 				</div> <!-- card.// -->
 				<div class="alert alert-danger" role="alert">
@@ -129,3 +125,156 @@
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->
 {% endblock %}
+
+{% block js %}
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+  window.onload = function () {
+    $("#display_info").hide();
+    payWithPaystack();
+  };
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+  function payWithPaystack() {
+	var a = "{{ grand_total }}"
+	var url = "{% url 'payments' %}"
+	var csrftoken = getCookie('csrftoken');
+	var orderID = "{{order.order_number}}"
+	var payment_method = 'Paystack'
+	var redirect_url = "{% url 'order_complete' %}"
+    var handler = PaystackPop.setup({
+      key: "pk_test_8db10ad5d62977fd46d72c5b38d120365c8ea8b0",
+      email: "{{order.email}}",
+      amount: parseInt(a) * 100,
+      currency: "NGN",
+      metadata: {
+        custom_fields: [
+          {
+            display_name: "Mobile Number",
+            variable_name: "mobile_number",
+            value: "{{order.phone}}",
+            orderID: "{{ order.order_number }}",
+          },
+        ],
+      },
+
+	  handler: function (response){
+		console.log(response)
+		var transID = response.transID
+		var payment_method = 'Paystack'
+		var status = 'Payment Success'
+		sendData(transID, payment_method, status);
+		},
+
+      // Set up the transaction
+		createOrder: function(data, actions) {
+			return actions.order.create({
+				purchase_units: [{
+					amount: {
+						value: amount,
+					}
+				}]
+			});
+		},
+
+		// Finalize the transaction
+		onApprove: function(data, actions) {
+			return actions.order.capture().then(function(details) {
+				// Show a success message to the buyer
+				console.log(details);
+				sendData();
+				function sendData(transID, payment_method, status){
+					fetch(url, {
+						method : "POST",
+						headers: {
+							"Content-type": "application/json",
+							"X-CSRFToken": csrftoken,
+						},
+						body: JSON.stringify({
+							orderID: orderID,
+							transID: details.id,
+							payment_method: payment_method,
+							status: details.status,
+						}),
+					})
+				  .then((response) => response.json())
+				  .then((data) => {
+						window.location.href = redirect_url + '?order_number='+data.order_number+'&payment_id='+data.transID;
+					});
+				}
+			});
+		},
+
+		callback: function (response) {
+        var ref = response.reference;
+        var orderID = "{{ order.order_number }}";
+        console.log(orderID)
+
+        // $('div#home').show();
+        $.ajax({
+          method: "GET",
+          url: "{% url 'payments' %}",
+          data: {
+            id: orderID,
+            reference: ref,
+          },
+          dataType: "json",
+
+          success: function (data) {
+            if (data.message == "Your Payment was successfully received") {
+              $("#output").html(data.message);
+              $("#success").html(
+                `<p>Transaction reference is : <h2>${ref}</h2> and your order id is <h2>${orderID}</h2></p>`
+              );
+              $("#display_info").show();
+            } else if (data.message == "Your Payment Failed!!!") {
+              $("#output").html(data.message);
+              $("#success").html(
+                `<a href="{% url 'place_order' %}" class="button">Checkout</a>`
+              );
+            }
+          },
+        });
+      },
+
+
+		onClose: function () {
+			alert("window closed");
+		},
+    });
+
+    handler.openIframe();
+  }
+</script>
+{% endblock js %}
+
+
+
+"handler": function (response){
+
+console.log(response)
+
+var transID = response.razorpay_payment_id
+
+var payment_method = 'Razorpay'
+
+var status = 'Payment Success'
+
+sendData(transID, payment_method, status);
+
+}
